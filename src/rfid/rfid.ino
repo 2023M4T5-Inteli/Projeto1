@@ -1,3 +1,4 @@
+// Incluindo bibliotecas
 #include <SPI.h>
 #include <MFRC522.h>
 #include <LiquidCrystal_I2C.h>
@@ -9,6 +10,8 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 MFRC522 mfrc522(SS_PIN, RST_PIN);   
 String content;
+
+// Definindo as portas
 const int buzzerPin = 25;
 const int ledVerm = 32;
 const int ledVerd = 14;
@@ -16,60 +19,58 @@ const int button = 4;
 const int pins[] = {buzzerPin, ledVerm, ledVerd};
 const int pinsInput[] = {button};
 const int keys[] = {};
+bool autorizado = false;
+char* listaCartoesAutorizados[] = {"AC 55 08 00"};
+int led;
 
 void setup() {
-  for (int i = 0; i < 4; i++) {
+  // Configurações iniciais
+  Serial.begin(9600);  
+  SPI.begin();      
+  mfrc522.PCD_Init();   
+
+  // Definindo as portas input e output
+  for (int i = 0; i < 3; i++) {
     pinMode(pins[i], OUTPUT);
     pinMode(pinsInput[i], INPUT);
   }
 
-  pinMode(14, OUTPUT);
+  // Início do programa
   inicioLcd();
-  Serial.begin(9600);  
-  SPI.begin();      
-  mfrc522.PCD_Init();   
-  aproximeCartao();
-  Serial.println();
-
+  lcdPrinter("Aproxime o", "Cartao");
 }
 
-void inicioLcd(){
-  lcd.init();
+void inicioLcd() {
+  // Configurações do LCD
   lcd.init();
   lcd.backlight();
-  lcd.setCursor(3, 0);
-  lcd.print("IoTrackers");
-  lcd.setCursor(0, 1);
-  lcd.print("Inteli | Pirelli");
-  delay(2000);
+  lcdPrinter("IoTrackers", "Inteli | Pirelli");
+  delay(5000);
   lcd.clear();
-  lcd.setCursor(0, 0);
 }
-void loop() 
-{
+
+void loop() {
   lerCard();
 } 
 
-void lerCard(){
-  if ( ! mfrc522.PICC_IsNewCardPresent()) 
-  {
-    return;
-  }
-  if ( ! mfrc522.PICC_ReadCardSerial()) 
-  {
-    return;
-  }
+void lerCard() {
+  // Verificando se é um cartão
+  if (!mfrc522.PICC_IsNewCardPresent()) { return; }
+  if (!mfrc522.PICC_ReadCardSerial()) { return; }
   lcd.clear();
+
+  // Printando o id da tag
   Serial.print("UID tag :");
   String content= "";
   byte letter;
-  for (byte i = 0; i < mfrc522.uid.size; i++) 
-  {
+  for (byte i = 0; i < mfrc522.uid.size; i++) {
      Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
      Serial.print(mfrc522.uid.uidByte[i], HEX);
      content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
      content.concat(String(mfrc522.uid.uidByte[i], HEX));
   }
+
+  // Verificando o cartão
   verificaAcesso(content);
 }
 
@@ -90,64 +91,68 @@ void verificaAcesso(String content){
   Serial.println();
   content.toUpperCase();
 
-  if (content.substring(1) == "AC 55 08 00")
-  { 
-    acessoAutorizado(content);
-    lcd.clear();
-    delay(250);
-    aproximeCartao();
-  }
- 
- else {
-    naoAutorizado(content);
-    lcd.clear();
-    delay(250);
-    aproximeCartao();
-  }
+  // Verificando se o cartão está autorizado
+  for (const auto& elemento : listaCartoesAutorizados) {
+    if (String(elemento) == content.substring(1)) {
+      autorizado = true;
+      acessoAutorizacao(content, autorizado);
+      break;
+      }
+    }
+
+    //Fornecendo resposta pro usuário
+    if (autorizado == false) {
+      acessoAutorizacao(content, autorizado);
+    }
+  lcd.clear();
+  delay(250);
+  lcdPrinter("Aproxime o", "Cartao");
 }
 
-void acessoAutorizado(String content){
+void acessoAutorizacao (String content, bool autorizado) {
   Serial.print("Menssagem : ");
-  Serial.println("Acesso Autorizado");
-  lcd.print("Acesso Autorizado: ");
-  lcd.setCursor(0, 1);
-  lcd.print(content);
-  ledVerdeBuzzer();
-  Serial.println();   
+
+  // Caso o cartão esteja autorizado
+  if (autorizado) {
+    Serial.println("Acesso Autorizado");
+    lcdPrinter("Acesso Autorizado: ", content);
+    ledBuzzer("verde");
+  } else {
+    Serial.println("Acesso Negado");
+    lcdPrinter("Acesso Negado: ", content);
+    ledBuzzer("vermelho");
+  }
 }
 
-void naoAutorizado(String content){
-  Serial.print("Menssagem : ");
-  Serial.println(" Acesso Negado");
-  lcd.print("Acesso Negado: ");
-  lcd.setCursor(0, 1);
-  lcd.print(content);
-  ledVermelhoBuzzer();
-  Serial.println();
+void ledBuzzer(String cor) {
+  // Condição para ver o comportamento do acendimento
+  if (cor == "verde") {
+    led = ledVerd;
+    digitalWrite(led, HIGH);  
+    buzzer(250);
+    buzzer(250);
+  } else {
+    led = ledVerm;
+    digitalWrite(led, HIGH);  
+    buzzer(750);
+  }
+  digitalWrite(led, LOW); 
 }
 
-void ledVermelhoBuzzer(){
-  digitalWrite(ledVerm, HIGH);
-  buzzer();
-  delay(1000);
-  digitalWrite(ledVerm, LOW);
-}
 
-void ledVerdeBuzzer(){
-  digitalWrite(ledVerd, HIGH);  
-  buzzer();
-  delay(1000);
-  digitalWrite(ledVerd, LOW); 
-}
-
-void buzzer(){
+// Função para fazer barulho.
+void buzzer(int time) {
   digitalWrite(buzzerPin, HIGH);
-  delay(500);
+  delay(time);
   digitalWrite(buzzerPin, LOW);
+  delay(time);
 }
 
-void aproximeCartao(){
-  lcd.print("Aproxime o");
-  lcd.setCursor(0, 1);
-  lcd.print("Cartao");
+// Função para printar algo no LCD
+void lcdPrinter(String message1, String message2) {
+  lcd.print(message1);
+  if (message2 != nullptr) {
+    lcd.setCursor(0, 1);
+    lcd.print(message2);
+  }
 }
