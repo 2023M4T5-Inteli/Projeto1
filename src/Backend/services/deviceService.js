@@ -10,7 +10,7 @@ async function createDevice(model, marca, nota_fiscal, data_compra, periodo_leas
 
 		const newDevice = new Device({ 
 			model, 
-			marca, 
+			marca,
 			nota_fiscal, 
 			data_compra,
 			periodo_leasing,
