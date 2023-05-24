@@ -1,5 +1,6 @@
-import { Router } from 'express';
-import userController from '../controllers/userController.js';
+const Router =  require('express');
+const userController = require('../controllers/userController');
+const deviceController = require('../controllers/deviceController');
 
 
 const routes = new Router();
@@ -8,6 +9,35 @@ routes.get('/', (req, res) => {
 	res.status(200).json({ ok: 'connected' });
 });
 
-routes.get('/users', userController.createUser);
+// Rota para criar um usuário
+routes.post('/users', userController.createUser);
 
-export default routes;
+// Rota para obter todos os usuários
+routes.get('/users', userController.getAllUsers);
+
+// Rota para obter um usuário pelo id
+routes.get('/users/:id', userController.getUserById);
+
+// Rota para deletar um usuário pelo id
+routes.delete('/users/:id', userController.deleteUser);
+
+// Rota para atualizar um usuário pelo id
+routes.put('/users/:id', userController.updateUser);
+
+// Rota para criar um dispositivo
+routes.post('/devices', deviceController.createDevice);
+
+// Rota para obter todos os dispositivos
+routes.get('/devices', deviceController.getAllDevices);
+
+// Rota para obter um dispositivo pelo id
+routes.get('/devices/:id', deviceController.getDeviceById);
+
+// Rota para deletar um dispositivo pelo id
+routes.delete('/devices/:id', deviceController.deleteDevice);
+
+// Rota para atualizar um dispositivo pelo id
+routes.put('/devices/:id', deviceController.updateDevice);
+
+
+module.exports = routes;
