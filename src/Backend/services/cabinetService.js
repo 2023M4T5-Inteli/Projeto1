@@ -36,12 +36,11 @@ async function getCabinetById(id) {
 	}
 }
 
-async function updateCabinet(id, number, isEmpety) {
+async function updateCabinet(id, number, isEmpty) {
 	try {
 		const updateCabinet = await Cabinet.findByIdAndUpdate(
 			id,
-			{ number, isEmpety },
-			{ new: true }
+			{ number, isEmpty },
 		);
 		return updateCabinet;
 	} catch (error) {
