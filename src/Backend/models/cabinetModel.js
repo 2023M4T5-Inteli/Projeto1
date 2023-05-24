@@ -4,20 +4,35 @@ const Schema = mongoose.Schema;
 const cabinetSchema = new Schema({
 	number: {
 		type: Number,
+		required: true
 	},
 
 	isEmpty: {
-		type: Boolean
+		type: Boolean,
+		required: true
 	},
 
 	historic: {
-		lastOpen: String, //guardar id
-		lastClose: String, //guardar id
-		HourOpen: Date,
-		HourClose: Date,
+		lastOpen: {
+			type: String,
+			required: true
+		},
+
+		lastClose: {
+			type: String,
+			required: true
+		},
+
+		HourOpen: {
+			type: Date,
+			required: true
+		},
+
+		HourClose: {
+			type: Date,
+			required: true
+		}
 	}
-
-
 });
 
 const Cabinet = mongoose.model('Cabinet', cabinetSchema);
