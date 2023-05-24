@@ -1,65 +1,64 @@
 const cabinetService = require('../services/cabinetService');
 
 async function createCabinet(req, res) {
-	const { number, isEmpty} = req.body;
-	try{
-		const cabinetCreated =  await cabinetService.createCabinet(number, isEmpty);
+	const { number, isEmpty } = req.body;
+	try {
+		const cabinetCreated = await cabinetService.createCabinet(number, isEmpty);
 		return res.status(201).json(cabinetCreated);
-	}
-	catch(error){
+	} catch (error) {
 		console.log(error);
 		return res.status(500).json({ error: 'Internal server error' });
 	}
 }
 
-async function getAllCabinet(req, res){
-	try{
+async function getAllCabinet(req, res) {
+	try {
 		const allCabinet = await cabinetService.getAllCabinet();
 		return res.status(200).json(allCabinet);
-	}
-	catch(error){
+	} catch (error) {
 		console.log(error);
 		return res.status(500).json({ error: 'Internal server error' });
 	}
 }
 
-async function getCabinetById(res, req){
+async function getCabinetById(req, res) {
 	const { id } = req.params;
-	try{
+	try {
 		const cabinet = await cabinetService.getCabinetById(id);
 		return res.status(200).json(cabinet);
-	}
-	catch(error){
+	} catch (error) {
 		console.log(error);
 		return res.status(404).json({ error: 'Usuario não encontrado' });
 	}
 }
 
-async function updateCabinet(res, req){
+async function updateCabinet(req, res) {
 	const { id } = req.params;
-	const { number, isEmpty} = req.body;
-	try{
-		const cabinetUpdate = await cabinetService.updateCabinet(id ,number, isEmpty);
-		return res.statuscode(200).json(cabinetUpdate);
-	}
-	catch(error){
+	const { number, isEmpty } = req.body;
+	try {
+		const cabinetUpdate = await cabinetService.updateCabinet(
+			id,
+			number,
+			isEmpty
+		);
+		return res.status(200).json(cabinetUpdate);
+	} catch (error) {
 		console.log(error);
 		return res.status(404).json({ error: 'Usuario não encontrado' });
 	}
 }
 
-async function deleteCabinet(res, req){
+async function deleteCabinet(req, res) {
 	const { id } = req.params;
-	try{
+	try {
 		const cabinetDelete = await cabinetService.deleteCabinet(id);
 
 		if (!cabinetDelete) {
 			return res.status(404).json({ error: 'User not found' });
 		}
 
-		return res.statuscode(200).json(cabinetDelete);
-	}
-	catch(error){
+		return res.status(200).json(cabinetDelete);
+	} catch (error) {
 		console.log(error);
 		return res.status(404).json({ error: 'Internal server error' });
 	}
@@ -70,5 +69,5 @@ module.exports = {
 	getAllCabinet,
 	getCabinetById,
 	updateCabinet,
-	deleteCabinet
+	deleteCabinet,
 };

@@ -50,9 +50,9 @@ routes.get('/cabinet', cabinetController.getAllCabinet);
 routes.get('/cabinet/:id', cabinetController.getCabinetById);
 
 // Rota para deletar um usuário pelo id
-routes.delete('/cabinet/:id', cabinetController.updateCabinet);
+routes.put('/cabinet/:id', cabinetController.updateCabinet);
 
 // Rota para atualizar um usuário pelo id
-routes.put('/cabinet/:id', cabinetController.deleteCabinet);
+routes.delete('/cabinet/:id', cabinetController.deleteCabinet);
 
 module.exports = routes;
