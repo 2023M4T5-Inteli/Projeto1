@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const date = require('date-and-time');
+  
 
 const cabinetSchema = new Schema({
 	number: {
 		type: Number,
-		required: true
+		required: true,
 	},
 
 	isEmpty: {
@@ -25,15 +27,18 @@ const cabinetSchema = new Schema({
 
 		HourOpen: {
 			type: Date,
-			required: true
+			required: true,
+			default: () => date.format(new Date(),'YYYY/MM/DD HH:mm:ss')
 		},
-
+        
 		HourClose: {
 			type: Date,
-			required: true
+			required: true,
+			default: () => date.format(new Date(),'YYYY/MM/DD HH:mm:ss')
 		}
 	}
 });
+
 
 const Cabinet = mongoose.model('Cabinet', cabinetSchema);
 

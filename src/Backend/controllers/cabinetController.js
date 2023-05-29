@@ -1,9 +1,9 @@
 const cabinetService = require('../services/cabinetService');
 
 async function createCabinet(req, res) {
-	const { number, isEmpty } = req.body;
+	const { number, isEmpty, lastClose, lastOpen, HourClose, HourOpen } = req.body;
 	try {
-		const cabinetCreated = await cabinetService.createCabinet(number, isEmpty);
+		const cabinetCreated = await cabinetService.createCabinet(number, isEmpty, lastClose, lastOpen, HourClose, HourOpen);
 		return res.status(201).json(cabinetCreated);
 	} catch (error) {
 		console.log(error);

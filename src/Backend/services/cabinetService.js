@@ -1,6 +1,6 @@
 const Cabinet = require('../models/cabinetModel');
 
-async function createCabinet(number, isEmpty) {
+async function createCabinet(number, isEmpty, historic) {
 	try {
 		const cabinetExist = await Cabinet.findOne({ number });
 		if (cabinetExist) {
@@ -10,11 +10,15 @@ async function createCabinet(number, isEmpty) {
 		const newCabinet = new Cabinet({
 			number,
 			isEmpty,
+			lastOpen: historic.lastOpen,
+			lastClose: historic.lastOpen,
+			HourOpen: historic.lastOpen,
+			HourClose: historic.lastOpen
 		});
 		const cabinetSaved = await newCabinet.save();
 		return cabinetSaved;
 	} catch (error) {
-		throw new Error('Erro ao criar armário' + error.menssage);
+		throw new Error('Erro ao criar armário' + error.message);
 	}
 }
 
@@ -23,7 +27,7 @@ async function getAllCabinet() {
 		const allCabinet = await Cabinet.find();
 		return allCabinet;
 	} catch (error) {
-		throw new Error('Erro ao buscar armários' + error.menssage);
+		throw new Error('Erro ao buscar armários' + error.message);
 	}
 }
 
@@ -32,7 +36,7 @@ async function getCabinetById(id) {
 		const cabinet = await Cabinet.findById(id);
 		return cabinet;
 	} catch (error) {
-		throw new Error('Erro ao buscar armário' + error.menssage);
+		throw new Error('Erro ao buscar armário' + error.message);
 	}
 }
 

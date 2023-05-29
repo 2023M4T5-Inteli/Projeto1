@@ -17,7 +17,7 @@ routes.post('/users', userController.createUser);
 routes.get('/users', userController.getAllUsers);
 
 // Rota para obter um usuário pelo id
-routes.get('/users/:id', userController.getUserById);
+routes.get('/users/:id', userController.getUserById); 
 
 // Rota para deletar um usuário pelo id
 routes.delete('/users/:id', userController.deleteUser);
