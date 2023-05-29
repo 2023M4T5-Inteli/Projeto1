@@ -1,11 +1,14 @@
 #include <WiFi.h>
 #include <math.h>
+#include <string>
 #include <HTTPClient.h>
 #include <ArduinoJson.h> //permite manipular objetos e dados JSON.
 #include <Wire.h>
 #include <RTClib.h>
 #include <UbidotsEsp32Mqtt.h>
+#include <map>
 
+// Declarações iniciais
 const char* WIFI_SSID = "Inteli-COLLEGE"; // Fernanda
 const char* WIFI_PASS = "QazWsx@123"; //  999818053
 
@@ -15,46 +18,27 @@ const char* VARIABLE_LABEL = "vartestevinicius"; // Replace with your variable l
 const char* VARIABLE_LABEL2= "macvinicius";
 
 String bssid;
+String bssidIP;
+String macString = "";
 
 const int PUBLISH_FREQUENCY = 1000; // Update rate in milliseconds
 unsigned long timer;
 Ubidots ubidots(UBIDOTS_TOKEN);
 
-struct WiFiAP {  //informações de um ponto de acesso 
-  String WIFI_SSID;
-  int rssi;
-  float x;
-  float y;
-};
+// Dicionário dos ips dos roteadores e o nome da sua localidade no campus
+char* dictBssidAtelies[][] = {
+  {"FC:5C:45:00:4F:C8", "Ateliê 11"},
+  {"FC:5C:45:00:60:98", "Ateliê 9"},
+  {"FC:5C:45:00:63:58", "Honest Bar"},
+  {"FC:5C:45:00:63:58", "Atelie 5"},
+  {"FC:5C:45:00:68:88", "Itbar"},
+  {"FC:5C:45:00:4F:D8", "Biblioteca/Honest"},
+  {"84:23:88:19:6A:B8", "Lancheco"},
+  {"FC:5C:45:00:5F:68", "Refeitório"},
+  {"FC:5C:45:00:57:48", "Secretaria/Sofá do POD"}
+  };
 
-unsigned int macToInt(const uint8_t* mac) {
-  unsigned int result = 0;
-
-  for (int i = 0; i < 6; i++) {
-    result = (result << 8) | mac[i];
-  }
-
-  return result;
-}
-
-void estimatePosition(WiFiAP* apList, int numAPs) {
-  float sumX = 0;
-  float sumY = 0;
-  float sumWeight = 0;
-
-  for (int i = 0; i < numAPs; i++) {
-    WiFiAP ap = apList[i];
-    float weight = pow(10, (ap.rssi / -10.0)); // Peso do RSSI
-
-    sumX += ap.x * weight;
-    sumY += ap.y * weight;
-    sumWeight += weight;
-  }
-
-  float estimatedX = sumX;
-  // Faça algo com a posição estimada
-}
-
+// Função inicial
 void setup() {
   Serial.begin(115200);
   WiFi.mode(WIFI_STA);
@@ -63,6 +47,7 @@ void setup() {
 
   Serial.println("Escaneando redes WiFi...");
   int numRedes = WiFi.scanNetworks();
+  delay(500);
   Serial.print("Redes encontradas: ");
   Serial.println(numRedes);
 
@@ -72,7 +57,7 @@ void setup() {
     Serial.println("Redes WiFi encontradas:");
     for (int i = 0; i < numRedes; i++) {
       String WIFI_SSID = WiFi.SSID(i);
-      int rssi = WiFi.RSSI(i);
+      int rssi = WiFi.RSSI(i); // intensidade do sinal
       Serial.print("SSID: ");
       Serial.print(WIFI_SSID);
       Serial.print(" | Intensidade do sinal (RSSI): ");
@@ -88,7 +73,7 @@ void setup() {
     Serial.println("Conectando ao Wi-Fi...");
   }
   
-  Serial.println("Conectado ao Wi-Fi!");
+  Serial.println("Conectado ao Wi-Fi com sucesso!");
 
   ubidots.connectToWifi(WIFI_SSID, WIFI_PASS);
   ubidots.setup();
@@ -100,7 +85,6 @@ void setup() {
 void loop() {
 
   // Obter informações do ponto de acesso conectado
-  int rssi; // Intensidade do sinal
   byte mac[6]; // //Endereço fisíco roteador 
   WiFi.macAddress(mac);
 
@@ -112,16 +96,9 @@ void loop() {
   }
   Serial.println();
 
-  String macString = ""; 
-  for (int i = 0; i < 6; i++) {
-    if (mac[i] < 0x10) {
-      macString += "0";
-    }
-    macString += String(mac[i], HEX);
-    if (i < 5) {
-      macString += ":";
-    }
-  }
+  
+  macString = formatMacString(mac);
+
 
   Serial.print("Endereço MAC formatado: ");
   Serial.println(macString);
@@ -134,8 +111,7 @@ void loop() {
 
   identificandoRoteador();
 
-  if(millis() - timer > PUBLISH_FREQUENCY){
-    
+  if (millis() - timer > PUBLISH_FREQUENCY) {
     int32_t rssi = WiFi.RSSI();
     uint8_t* mac = WiFi.BSSID();
     int macint=macToInt(mac);
@@ -145,8 +121,8 @@ void loop() {
     ubidots.publish(DEVICE_LABEL);
     timer = millis();
   }
-  if (!ubidots.connected())
-  {
+
+  if (!ubidots.connected()) {
     ubidots.reconnect();
     ubidots.subscribeLastValue(DEVICE_LABEL, VARIABLE_LABEL); 
   }
@@ -174,30 +150,65 @@ void loop() {
   delay(5000);
 }
 
-void identificandoRoteador() {
-  String bssid = WiFi.BSSIDstr();
+std::string formatMacString(bit mac) {
+  String macString = "";
+  for (int i = 0; i < 6; i++) {
+    if (mac[i] < 0x10) {
+      macString += "0";
+    }
+    macString += String(mac[i], HEX);
+    if (i < 5) {
+      macString += ":";
+    }
+  }
+  return macString;
+}
 
-    // Procurar o valor correspondente no dicionário
-  if (bssid == "FC:5C:45:00:4F:C8") {
-    bssid = "Ateliê 11";
-  } else if (bssid == "FC:5C:45:00:60:98") {
-    bssid = "Ateliê 9";
-  } else if (bssid == "FC:5C:45:00:63:58") {
-    bssid = "Honest Bar";
-  } else if (bssid == "FC:5C:45:00:63:58") {
-    bssid = "Atelie 5";
-  } else if (bssid == "FC:5C:45:00:68:88") {
-    bssid = "Itbar";
-  } else if (bssid == "FC:5C:45:00:4F:D8") {
-    bssid = "Biblioteca/Honest";
-  } else if (bssid == "84:23:88:19:6A:B8") {
-    bssid = "Lancheco";
-  } else if (bssid == "FC:5C:45:00:5F:68") {
-    bssid = "Refeitório";
-  } else if (bssid == "FC:5C:45:00:57:48") {
-    bssid = "Secretaria/Sofá do POD";
-  } else {
-    bssid = "Roteador não Mapeado";
+struct WiFiAP {  //informações de um ponto de acesso 
+  String WIFI_SSID;
+  int rssi;
+  float x;
+  float y;
+};
+
+unsigned int macToInt(const uint8_t* mac) {
+  unsigned int result = 0;
+
+  for (int i = 0; i < 6; i++) {
+    result = (result << 8) | mac[i];
+  }
+  return result;
+}
+
+void estimatePosition(WiFiAP* apList, int numAPs) {
+  float sumX = 0;
+  float sumY = 0;
+  float sumWeight = 0;
+
+  for (int i = 0; i < numAPs; i++) {
+    WiFiAP ap = apList[i];
+    float weight = pow(10, (ap.rssi / -10.0)); // Peso do RSSI
+
+    sumX += ap.x * weight;
+    sumY += ap.y * weight;
+    sumWeight += weight;
+  }
+
+  float estimatedX = sumX;
+  // Faça algo com a posição estimada
+}
+
+void identificandoRoteador() {
+  String bssidIP = WiFi.BSSIDstr();
+
+  // Procurar o valor correspondente no dicionário
+  for (const auto& elemento : dictBssidAtelies) {
+    if (String(elemento[0]) == bssidIP) {
+      bssid = String(elemento[1])
+      break;
+    } else {
+      bssid = "Roteador não Mapeado";
+    }
   }
 
   // Atribuir o valor corrigido a bssid
