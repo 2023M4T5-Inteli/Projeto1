@@ -3,7 +3,6 @@ const userController = require('../controllers/userController');
 const deviceController = require('../controllers/deviceController');
 const cabinetController = require('../controllers/cabinetController');
 
-
 const routes = new Router();
 
 routes.get('/', (req, res) => {
