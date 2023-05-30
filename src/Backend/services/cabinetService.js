@@ -1,6 +1,6 @@
 const Cabinet = require('../models/cabinetModel');
 
-async function createCabinet(number, isEmpty) {
+async function createCabinet(number, isEmpty, historic) {
 	try {
 		const cabinetExist = await Cabinet.findOne({ number });
 		if (cabinetExist) {
@@ -10,11 +10,15 @@ async function createCabinet(number, isEmpty) {
 		const newCabinet = new Cabinet({
 			number,
 			isEmpty,
+			historic: {
+				lastOpen: historic.lastOpen,
+				HourOpen: historic.HourOpen
+			}
 		});
 		const cabinetSaved = await newCabinet.save();
 		return cabinetSaved;
 	} catch (error) {
-		throw new Error('Erro ao criar armário' + error.menssage);
+		throw new Error('Erro ao criar armário: ' + error);
 	}
 }
 

@@ -18,20 +18,13 @@ const cabinetSchema = new Schema({
 			required: true
 		},
 
-		lastClose: {
-			type: String,
-			required: true
-		},
-
 		HourOpen: {
 			type: Date,
+			default: new Date(),
 			required: true
 		},
 
-		HourClose: {
-			type: Date,
-			required: true
-		}
+
 	}
 });
 
