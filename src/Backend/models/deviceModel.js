@@ -22,16 +22,22 @@ const deviceSchema = new Schema({
 		type: String,
 		required: true
 	},
-	numero_rastreador: {
-		type: String,
-		required: true
-	},
 	numero_de_serie: {
 		type: String,
 		required: true
 	},
+	localizacoes: [{
+		setor: {
+			type: String,
+			required: true
+		},
+		data: {
+			type: Date,
+			default: Date.now
+		}
+	}],
 });
 
-const Device = mongoose.model('Device', deviceSchema);
+const DeviceModel = mongoose.model('Devices', deviceSchema);
 
-module.exports = Device;
+module.exports = DeviceModel;

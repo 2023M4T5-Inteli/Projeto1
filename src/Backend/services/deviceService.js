@@ -1,6 +1,42 @@
 const Device = require('../models/deviceModel');
+const mqtt = require('mqtt');
 
-async function createDevice(model, marca, nota_fiscal, data_compra, periodo_leasing, numero_rastreador, numero_de_serie) {
+function connectToMQTT() {
+	const client = mqtt.connect('mqtt://mqtt-broker-url'); // colocar o endereço do broker
+
+	client.on('connect', function () {
+		console.log('Connected to MQTT Broker');
+		client.subscribe('localizacoes');
+	});
+
+	client.on('message', async function (topic, message) {
+		if (topic === 'localizacoes') {
+			const localizacoes = JSON.parse(message.toString());
+			console.log('Recived new locations: ', localizacoes);
+
+			try {
+				const deviceId = localizacoes.deviceId;
+
+				const device = await Device.findById(deviceId);
+
+				if (!device) {
+					throw new Error('Device not found', deviceId);
+				}
+
+				device.localizacoes.push(...localizacoes.localizacoes);
+				await device.save();
+
+				console.log('Locations added to device: ', deviceId);
+			} catch (error) {
+				console.log('Error adding locations', error);
+			}
+		}
+	});
+}
+
+connectToMQTT();
+
+async function createDevice(model, marca, nota_fiscal, data_compra, periodo_leasing, numero_de_serie, localizacoes) {
 	try {
 		const deviceExist = await Device.findOne({ numero_de_serie });
 
@@ -14,8 +50,13 @@ async function createDevice(model, marca, nota_fiscal, data_compra, periodo_leas
 			nota_fiscal, 
 			data_compra,
 			periodo_leasing,
-			numero_rastreador,
-			numero_de_serie
+			numero_de_serie,
+			localizacoes: [
+				{
+					setor: localizacoes.setor,
+					data: localizacoes.data
+				}
+			]
 		});
 
 		const deviceSaved = await newDevice.save();
@@ -43,9 +84,16 @@ async function getDeviceById(id) {
 	}
 }
 
-async function updateDevice(id, model, marca, nota_fiscal, data_compra, periodo_leasing, numero_rastreador, numero_de_serie) {
+async function updateDevice(id, model, marca, nota_fiscal, data_compra, periodo_leasing, numero_de_serie, localizacoes) {
 	try {
-		const updateDevice = await Device.findByIdAndUpdate(id, { model, marca, nota_fiscal, data_compra, periodo_leasing, numero_rastreador, numero_de_serie }, {new: true});
+		const updateDevice = await Device.findByIdAndUpdate(id, { 
+			model, 
+			marca, 
+			nota_fiscal, 
+			data_compra, 
+			periodo_leasing, 
+			numero_de_serie,
+			$push: { localizacoes: { $each: localizacoes } } }, {new: true});
 		return updateDevice;
 	} catch (error) {
 		throw new Error('Erro ao atualizar dispositivo' + error.message);
@@ -60,6 +108,7 @@ async function deleteDevice(id) {
 		throw new Error('Erro ao deletar dispositivo' + error.message);
 	}
 }
+
 
 module.exports = { 
 	createDevice,

@@ -49,10 +49,10 @@ async function getDeviceById(req, res) {
 
 async function updateDevice(req, res) {
 	const { id } = req.params;
-	const { model, marca, nota_fiscal, data_compra, periodo_leasing, numero_rastreador, numero_de_serie } = req.body;
+	const { model, marca, nota_fiscal, data_compra, periodo_leasing, numero_de_serie, localizacoes } = req.body;
 
 	try {
-		const deviceUpdated = await DeviceService.updateDevice(id, model, marca, nota_fiscal, data_compra, periodo_leasing, numero_rastreador, numero_de_serie);
+		const deviceUpdated = await DeviceService.updateDevice(id, model, marca, nota_fiscal, data_compra, periodo_leasing, numero_de_serie, localizacoes);
 
 		if (!deviceUpdated) {
 			return res.status(404).json({

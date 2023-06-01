@@ -1,14 +1,14 @@
-const User = require('../models/userModel');
+const UserModel = require('../models/userModel');
 
 async function createUser(name, email, password, id_tag, setor, equipe) {
 	try {
-		const userExist = await User.findOne({ email });
+		const userExist = await UserModel.findOne({ email });
 
 		if (userExist) {
 			throw new Error('User already exists');
 		}
 
-		const newUser = new User({ 
+		const newUser = new UserModel({ 
 			name, 
 			email, 
 			password, 
@@ -26,7 +26,7 @@ async function createUser(name, email, password, id_tag, setor, equipe) {
 
 async function getAllUsers() {
 	try {
-		const allUsers = await User.find();
+		const allUsers = await UserModel.find();
 		return allUsers;
 	} catch (error) {
 		throw new Error('Erro ao buscar usuários' + error.message);
@@ -35,7 +35,7 @@ async function getAllUsers() {
 
 async function getUserById(id) {
 	try {
-		const user = await User.findById(id);
+		const user = await UserModel.findById(id);
 		return user;
 	} catch (error) {
 		throw new Error('Erro ao buscar usuário' + error.message);
@@ -44,7 +44,7 @@ async function getUserById(id) {
 
 async function updateUser(id, name, email, password, id_tag, setor, equipe) {
 	try {
-		const updateUser = await User.findByIdAndUpdate(id, {name, email, password, id_tag, setor, equipe}, {new: true});
+		const updateUser = await UserModel.findByIdAndUpdate(id, {name, email, password, id_tag, setor, equipe}, {new: true});
 		return updateUser;
 	} catch (error) {
 		throw new Error('Erro ao atualizar usuário' + error.message);
@@ -53,7 +53,7 @@ async function updateUser(id, name, email, password, id_tag, setor, equipe) {
 
 async function deleteUser(id) {
 	try {
-		const userDeleted = await User.findByIdAndDelete(id);
+		const userDeleted = await UserModel.findByIdAndDelete(id);
 		return userDeleted;
 	} catch (error) {
 		console.log(error);
