@@ -18,6 +18,13 @@ const int ledVerd = 14;
 const int button = 4;
 const int pins[] = {buzzerPin, ledVerm, ledVerd};
 const int pinsInput[] = {button};
+const int rele = 21;
+
+const int triggerPin = 12;
+const int echoPin = 13;
+const int distanciaTablet = 7;
+bool tabletDisponivel;
+
 const int keys[] = {};
 bool autorizado = false;
 char* listaCartoesAutorizados[] = {"AC 55 08 00"};
@@ -35,13 +42,22 @@ void setup() {
     pinMode(pinsInput[i], INPUT);
   }
 
+  // Configurando portas rele
+  pinMode(rele, OUTPUT);
+
+   // Configurando portas sensorultrassonico
+  pinMode(triggerPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
   // Início do programa
   inicioLcd();
+  Serial.print("ENTROU SETUP");
   lcdPrinter("Aproxime o", "Cartao");
 }
 
 void inicioLcd() {
   // Configurações do LCD
+  Serial.print("ENTROU INICIOLCD");
   lcd.init();
   lcd.backlight();
   lcdPrinter("IoTrackers", "Inteli | Pirelli");
@@ -51,9 +67,12 @@ void inicioLcd() {
 
 void loop() {
   lerCard();
+  verificaTabletNoArmario();
+
 } 
 
 void lerCard() {
+  Serial.print("ENTROU LERCARD");
   // Verificando se é um cartão
   if (!mfrc522.PICC_IsNewCardPresent()) { return; }
   if (!mfrc522.PICC_ReadCardSerial()) { return; }
@@ -117,6 +136,7 @@ void acessoAutorizacao (String content, bool autorizado) {
     Serial.println("Acesso Autorizado");
     lcdPrinter("Acesso Autorizado: ", content);
     ledBuzzer("verde");
+    ativaRele();
   } else {
     Serial.println("Acesso Negado");
     lcdPrinter("Acesso Negado: ", content);
@@ -155,4 +175,26 @@ void lcdPrinter(String message1, String message2) {
     lcd.setCursor(0, 1);
     lcd.print(message2);
   }
+}
+
+//Função para ativar o rele
+void ativaRele() {
+  digitalWrite(rele, HIGH);
+  delay(3000);
+  digitalWrite(rele, LOW);
+}
+
+void verificaTabletNoArmario(){
+
+  long duration = pulseIn(echoPin, HIGH);
+  float distance = duration * 0.034 / 2;
+
+  if (distance > distanciaTablet) {
+    Serial.println("Tablet removido");
+    tabletDisponivel = false;
+  } else {
+    Serial.println("Tablet presente");
+    tabletDisponivel = true;
+  }
+
 }
