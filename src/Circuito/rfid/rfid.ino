@@ -2,6 +2,7 @@
 #include <SPI.h>
 #include <MFRC522.h>
 #include <LiquidCrystal_I2C.h>
+#include <Wire.h>
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 #define SS_PIN 5
@@ -15,37 +16,48 @@ String content;
 const int buzzerPin = 25;
 const int ledVerm = 32;
 const int ledVerd = 14;
-const int button = 4;
-const int pins[] = {buzzerPin, ledVerm, ledVerd};
-const int pinsInput[] = {button};
-const int rele = 21;
+const int ledRele = 2;
+//const int button = 4;
+const int pins[] = {buzzerPin, ledVerm, ledVerd, ledRele};
+//const int pinsInput[] = {button};
 
-const int triggerPin = 12;
-const int echoPin = 13;
+const int rele = 16;
+
+const int triggerPin = 35;
+const int echoPin = 34;
 const int distanciaTablet = 7;
 bool tabletDisponivel;
 
 const int keys[] = {};
 bool autorizado = false;
-char* listaCartoesAutorizados[] = {"AC 55 08 00"};
+char* listaCartoesAutorizados[] = {"C3 CD 05 15"};
 int led;
 
 void setup() {
   // Configurações iniciais
   Serial.begin(9600);  
+  Wire.begin();
   SPI.begin();      
   mfrc522.PCD_Init();   
 
   // Definindo as portas input e output
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 4; i++) {
     pinMode(pins[i], OUTPUT);
-    pinMode(pinsInput[i], INPUT);
+    //pinMode(pinsInput[i], INPUT);
   }
 
   // Configurando portas rele
   pinMode(rele, OUTPUT);
 
-   // Configurando portas sensorultrassonico
+  digitalWrite(rele, LOW);
+  digitalWrite(ledRele, HIGH);  
+  Serial.println("Entrou rele");
+  delay(3000);
+  digitalWrite(rele, HIGH);
+  digitalWrite(ledRele, LOW);  
+  Serial.println("Saiu rele");
+
+  // Configurando portas sensorultrassonico
   pinMode(triggerPin, OUTPUT);
   pinMode(echoPin, INPUT);
 
@@ -58,6 +70,8 @@ void setup() {
 void inicioLcd() {
   // Configurações do LCD
   Serial.print("ENTROU INICIOLCD");
+  lcd.begin(16, 2);
+  lcd.setCursor(0, 0);
   lcd.init();
   lcd.backlight();
   lcdPrinter("IoTrackers", "Inteli | Pirelli");
@@ -72,7 +86,6 @@ void loop() {
 } 
 
 void lerCard() {
-  Serial.print("ENTROU LERCARD");
   // Verificando se é um cartão
   if (!mfrc522.PICC_IsNewCardPresent()) { return; }
   if (!mfrc522.PICC_ReadCardSerial()) { return; }
@@ -116,7 +129,11 @@ void verificaAcesso(String content){
       autorizado = true;
       acessoAutorizacao(content, autorizado);
       break;
-      }
+    
+    } else{
+      autorizado = false;
+    }
+    
     }
 
     //Fornecendo resposta pro usuário
@@ -141,6 +158,7 @@ void acessoAutorizacao (String content, bool autorizado) {
     Serial.println("Acesso Negado");
     lcdPrinter("Acesso Negado: ", content);
     ledBuzzer("vermelho");
+    digitalWrite(rele, HIGH);
   }
 }
 
@@ -179,9 +197,13 @@ void lcdPrinter(String message1, String message2) {
 
 //Função para ativar o rele
 void ativaRele() {
-  digitalWrite(rele, HIGH);
-  delay(3000);
   digitalWrite(rele, LOW);
+  digitalWrite(ledRele, HIGH);  
+  Serial.println("Entrou rele");
+  delay(3000);
+  digitalWrite(rele, HIGH);
+  digitalWrite(ledRele, LOW);  
+  Serial.println("Saiu rele");
 }
 
 void verificaTabletNoArmario(){
@@ -196,5 +218,5 @@ void verificaTabletNoArmario(){
     Serial.println("Tablet presente");
     tabletDisponivel = true;
   }
-
+  delay(500);
 }
