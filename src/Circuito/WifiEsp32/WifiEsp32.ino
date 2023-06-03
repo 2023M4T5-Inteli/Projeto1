@@ -101,6 +101,7 @@ void loop() {
 
   // Obter informações do ponto de acesso conectado
   int rssi; // Intensidade do sinal
+  const int piorRede; // Pior sinal pré-determinado.
   byte mac[6]; // //Endereço fisíco roteador 
   WiFi.macAddress(mac);
 
@@ -171,6 +172,11 @@ void loop() {
     Serial.println("Não houve mudança de posição do roteador.");
   }
 
+  // Verifica se o dispositivo está pegando o melhor sinal Wi-Fi
+  if (rssi < piorRede ) {
+    conectarMelhorWifi();
+  }
+
   delay(5000);
 }
 
@@ -207,6 +213,38 @@ void identificandoRoteador() {
   Serial.println(bssid);
 
 }
+
+void conectarMelhorWifi() {
+  int numRedes = WiFi.scanNetworks();
+  int indiceMelhorRede = -1; // Valor inicial inválido para o índice da melhor rede
+
+  // Percorrer todas as redes disponíveis
+  for (int i = 0; i < numRedes; i++) {
+    int potencia = WiFi.RSSI(i);
+      indiceMelhorRede = i;
+  }
+
+  // Verificar se foi encontrada uma rede com potência de sinal suficientemente boa
+   if (indiceMelhorRede >= 0) {
+      if (WiFi.SSID(indiceMelhorRede) == "Inteli-COLLEGE" && WIFI_PASS == "QazWsx@123") {
+        Serial.print("Conectando à melhor rede WiFi: ");
+        Serial.println(WiFi.SSID(indiceMelhorRede));
+        WiFi.begin(WiFi.SSID(indiceMelhorRede).c_str(), WIFI_PASS);
+        while (WiFi.status() != WL_CONNECTED) {
+          delay(1000);
+          Serial.println("Conectando ao Wi-Fi...");
+        }
+      } else {
+          Serial.println("Senha da rede WiFi não fornecida ou rede não encontrada!");
+          Serial.println(WiFi.SSID(indiceMelhorRede));
+          ESP.restart();
+      }
+    } else {
+        Serial.println("Nenhuma rede WiFi encontrada!");
+        ESP.restart();
+}
+
+
 
 // void callback(char *topic, byte *payload, unsigned int length)
 // {
