@@ -46,7 +46,7 @@ struct Localizacao {
 SetorInfo setores[] = {
   {1, 1.1, 1.1, {"FC:5C:45:00:56:18"}, 1},
   {9, 2.2, 2.2, {"26:83:44:20:48:BF", "FC:5C:45:00:4F:C8"}, 2},
-  {11, 3.3, 3.3, {"BSSID3_1", "BSSID3_2", "BSSID3_3"}, 3}
+  {11, 3.3, 3.3, {"D0:D3:E0:4D:3B:A0", "BSSID3_2", "BSSID3_3"}, 3}
 };
 
 // Número total de setores no array
@@ -199,7 +199,7 @@ void loop() {
       localizacao.latitude = setorInfo.latitude;
       localizacao.longitude = setorInfo.longitude;
 
-      Serial.println();
+      Serial.println("--------------------");
       Serial.print("BSSID: ");
       Serial.println(bssid);
       Serial.print("Setor: ");
