@@ -101,7 +101,7 @@ void loop() {
 
   // Obter informações do ponto de acesso conectado
   int rssi; // Intensidade do sinal
-  int piorRede; // Pior sinal pré-determinado.
+  int piorRede = -70; // Pior sinal pré-determinado.
   byte mac[6]; // //Endereço fisíco roteador 
   WiFi.macAddress(mac);
 
