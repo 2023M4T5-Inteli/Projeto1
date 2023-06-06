@@ -101,7 +101,7 @@ void loop() {
 
   // Obter informações do ponto de acesso conectado
   int rssi; // Intensidade do sinal
-  const int piorRede; // Pior sinal pré-determinado.
+  int piorRede; // Pior sinal pré-determinado.
   byte mac[6]; // //Endereço fisíco roteador 
   WiFi.macAddress(mac);
 
@@ -242,6 +242,8 @@ void conectarMelhorWifi() {
     } else {
         Serial.println("Nenhuma rede WiFi encontrada!");
         ESP.restart();
+}
+
 }
 
 
