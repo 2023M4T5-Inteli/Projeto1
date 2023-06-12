@@ -3,6 +3,26 @@
 #include <MFRC522.h>
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
+#include <Ultrasonic.h>
+#include <Keypad.h>
+
+
+//Keypad
+
+// const uint8_t ROWS = 4;
+// const uint8_t COLS = 4;
+
+// char keys[ROWS][COLS] = {
+//   {'1','2','3', 'A'},
+//   {'4','5','6', 'B'},
+//   {'7','8','9', 'C'},
+//   {'*','0','#', 'D'}
+// };  
+// uint8_t colPins[COLS] = {2, 4, 17, 27}; // Pinos conectados a C1, C2, C3, C4
+// uint8_t rowPins[ROWS] = {33, 35, 34, 26}; // Pinos conectados a R1, R2, R3, R4
+
+// Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 #define SS_PIN 5
@@ -13,38 +33,49 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);
 String content;
 
 // Definindo as portas
+const int button_retirar= 34;
+const int button_devolver= 33;
+bool switch_acesso= false;
+int value_button_retirar= 0;
+int value_button_devolver= 0;
 const int buzzerPin = 25;
+const int ledRele= 0;
 const int ledVerm = 32;
 const int ledVerd = 14;
-const int ledRele = 2;
 //const int button = 4;
-const int pins[] = {buzzerPin, ledVerm, ledVerd, ledRele};
+const int pins[] = {buzzerPin, ledVerm, ledVerd};
 //const int pinsInput[] = {button};
 
 const int rele = 16;
 
-const int triggerPin = 35;
-const int echoPin = 34;
+const int triggerPin = 12;
+const int echoPin = 13;
 const int distanciaTablet = 7;
 bool tabletDisponivel;
 
-const int keys[] = {};
+//const int keys[] = {};
 bool autorizado = false;
 char* listaCartoesAutorizados[] = {"C3 CD 05 15"};
 int led;
+char key;
+String current = "";
+
 
 void setup() {
   // Configurações iniciais
   Serial.begin(9600);  
   Wire.begin();
   SPI.begin();      
-  mfrc522.PCD_Init();   
+  mfrc522.PCD_Init();
+     
 
   // Definindo as portas input e output
   for (int i = 0; i < 4; i++) {
     pinMode(pins[i], OUTPUT);
     //pinMode(pinsInput[i], INPUT);
   }
+  pinMode(button_retirar, INPUT);
+  pinMode(button_devolver, INPUT);
 
   // Configurando portas rele
   pinMode(rele, OUTPUT);
@@ -68,20 +99,32 @@ void setup() {
 }
 
 void inicioLcd() {
-  // Configurações do LCD
-  Serial.print("ENTROU INICIOLCD");
-  lcd.begin(16, 2);
-  lcd.setCursor(0, 0);
   lcd.init();
   lcd.backlight();
+  lcd.begin(16, 2);
+  lcd.setCursor(0, 0);
   lcdPrinter("IoTrackers", "Inteli | Pirelli");
+  Serial.print("ENTROU INICIO LCD");
   delay(5000);
   lcd.clear();
+}
+
+void processInput(char key) {
+  if ('-' == key && current == "") {
+    current = "-";
+    lcd.print("-");
+    return;
+  }
+}
+
+void Buttons(){
+  
 }
 
 void loop() {
   lerCard();
   verificaTabletNoArmario();
+  Buttons();
 
 } 
 
@@ -154,6 +197,31 @@ void acessoAutorizacao (String content, bool autorizado) {
     lcdPrinter("Acesso Autorizado: ", content);
     ledBuzzer("verde");
     ativaRele();
+    lcd.clear();
+    switch_acesso= true;
+    value_button_retirar= digitalRead(button_retirar);
+    value_button_devolver= digitalRead(button_devolver);
+
+  Serial.println(value_button_devolver);
+
+    if(switch_acesso){
+      lcdPrinter("Retirar:", "Devolver:");
+      lcd.clear();
+      if (value_button_retirar == HIGH){
+        lcdPrinter("Retire o tablet no armário: ", "");
+        delay(1000);
+        lcd.clear();
+
+      }
+      if (value_button_devolver == HIGH){
+        lcdPrinter("Devolva o tablet no armário: ", "");
+        delay(1000);
+        lcd.clear();
+
+      }
+  }
+//    lcdPrinter(customkey);
+
   } else {
     Serial.println("Acesso Negado");
     lcdPrinter("Acesso Negado: ", content);
@@ -208,8 +276,8 @@ void ativaRele() {
 
 void verificaTabletNoArmario(){
 
-  long duration = pulseIn(echoPin, HIGH);
-  float distance = duration * 0.034 / 2;
+  Ultrasonic ultrasonic(triggerPin, echoPin);
+  float distance = ultrasonic.read();
 
   if (distance > distanciaTablet) {
     Serial.println("Tablet removido");
@@ -218,5 +286,5 @@ void verificaTabletNoArmario(){
     Serial.println("Tablet presente");
     tabletDisponivel = true;
   }
-  delay(500);
+  delay(1000);
 }
