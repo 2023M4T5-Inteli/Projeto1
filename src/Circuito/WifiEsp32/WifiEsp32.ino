@@ -6,13 +6,15 @@
 #include <RTClib.h>
 #include <UbidotsEsp32Mqtt.h>
 
-const char* WIFI_SSID = "Inteli-COLLEGE"; // Fernanda
-const char* WIFI_PASS = "QazWsx@123"; //  999818053
+const char* WIFI_SSID = "SHARE-RESIDENTE"; // Fernanda
+const char* WIFI_PASS = "Share@residente23"; //  999818053
 
 const char *UBIDOTS_TOKEN = "BBFF-L2UWDy9jLghHCxu8o0xL10OjOrWxcM";
-const char* DEVICE_LABEL = "testevinicius";   // Replace with the device label to subscribe to
-const char* VARIABLE_LABEL = "vartestevinicius"; // Replace with your variable label to subscribe to
-const char* VARIABLE_LABEL2= "macvinicius";
+const char *DEVICE_LABEL = "iotrackers-rastreador";   // Label do dispositivo para onde os dados serão publicados
+const char *VARIABLE_LABEL1 = "bssid"; // Label da variável para onde os dados serão publicados
+const char *VARIABLE_LABEL2 = "intensidade-wifi"; // Label da variável para onde os dados serão publicados
+const char *VARIABLE_LABEL3 = "localizacao"; // Label da variável para onde os dados serão publicados
+const char *VARIABLE_LABEL4 = "localizacao-setor"; // Label da variável para onde os dados serão publicados
 
 String bssid;
 
@@ -26,6 +28,43 @@ struct WiFiAP {  //informações de um ponto de acesso
   float x;
   float y;
 };
+
+struct SetorInfo {
+  int setor; // mudar para string
+  double latitude;
+  double longitude;
+  String bssids[3];  // Alterado para um array de BSSIDs com tamanho máximo de 3
+  int numBssids; // Número atual de bssids no array
+};
+
+struct Localizacao {
+  double latitude;
+  double longitude;
+};
+
+// Array com os setores e suas informações
+SetorInfo setores[] = {
+  {1, 1.1, 1.1, {"FC:5C:45:00:56:18"}, 1},
+  {9, 2.2, 2.2, {"26:83:44:20:48:BF", "FC:5C:45:00:4F:C8"}, 2},
+  {11, 3.3, 3.3, {"D0:D3:E0:4D:3B:A0", "BSSID3_2", "BSSID3_3"}, 3}
+};
+
+// Número total de setores no array
+const int numSetores = sizeof(setores) / sizeof(SetorInfo);
+
+// Função para verificar o BSSID e retornar o setor correspondente, juntamente com a latitude e longitude
+SetorInfo verificarSetor(String bssid) {
+  for (int i = 0; i < numSetores; i++) {
+    for (int j = 0; j < setores[i].numBssids; j++) {
+      if (bssid.equals(setores[i].bssids[j])) {
+        return setores[i];
+      }
+    }
+  }
+  // Caso não encontre o BSSID, retorna uma estrutura vazia
+  SetorInfo vazio = {0, 0.0, 0.0, {}, 0};
+  return vazio;
+}
 
 unsigned int macToInt(const uint8_t* mac) {
   unsigned int result = 0;
@@ -91,9 +130,9 @@ void setup() {
   Serial.println("Conectado ao Wi-Fi!");
 
   ubidots.connectToWifi(WIFI_SSID, WIFI_PASS);
+  ubidots.setCallback(callback);
   ubidots.setup();
   ubidots.reconnect();
-  ubidots.subscribeLastValue(DEVICE_LABEL, VARIABLE_LABEL); 
 }
 
 
@@ -101,6 +140,7 @@ void loop() {
 
   // Obter informações do ponto de acesso conectado
   int rssi; // Intensidade do sinal
+  int piorRede = -70; // Pior sinal pré-determinado.
   byte mac[6]; // //Endereço fisíco roteador 
   WiFi.macAddress(mac);
 
@@ -132,23 +172,59 @@ void loop() {
   Serial.print(rssi);
   Serial.println(" dBm");
 
-  identificandoRoteador();
+
+
+  // identificandoRoteador();
 
   if(millis() - timer > PUBLISH_FREQUENCY){
-    
-    int32_t rssi = WiFi.RSSI();
-    uint8_t* mac = WiFi.BSSID();
-    int macint=macToInt(mac);
-    rssi=rssi*(-1);
-    ubidots.add(VARIABLE_LABEL, rssi);
-    ubidots.add(VARIABLE_LABEL2,macint);
-    ubidots.publish(DEVICE_LABEL);
-    timer = millis();
+
+    String bssid = WiFi.BSSIDstr();
+
+    // Imprimir o BSSID no terminal
+    Serial.print("BSSID: ");
+    Serial.println(bssid);
+
+    // Verificar o setor, latitude e longitude correspondentes ao BSSID
+    SetorInfo setorInfo = verificarSetor(bssid);
+
+    // Imprimir o setor, latitude e longitude correspondentes
+    if (setorInfo.setor != 0) {
+
+      int32_t rssi = WiFi.RSSI();
+      uint8_t* mac = WiFi.BSSID();
+      int macint = macToInt(mac);
+      String bssid = WiFi.BSSIDstr();
+
+      Localizacao localizacao;
+      localizacao.latitude = setorInfo.latitude;
+      localizacao.longitude = setorInfo.longitude;
+
+      Serial.println("--------------------");
+      Serial.print("BSSID: ");
+      Serial.println(bssid);
+      Serial.print("Setor: ");
+      Serial.println(setorInfo.setor);
+      Serial.print("Latitude: ");
+      Serial.println(setorInfo.latitude);
+      Serial.print("Longitude: ");
+      Serial.println(setorInfo.longitude);
+      Serial.print("Intensidade do sinal: ");
+      Serial.print(rssi);
+      Serial.println("dBm ");
+
+      
+      ubidots.add(VARIABLE_LABEL1,macint);
+      ubidots.add(VARIABLE_LABEL2, rssi);
+      ubidots.add(VARIABLE_LABEL4, setorInfo.setor);
+      ubidots.publish(DEVICE_LABEL);
+      timer = millis();
+    } else {
+      Serial.println("BSSID não encontrado nos setores.");
+    };
   }
   if (!ubidots.connected())
   {
     ubidots.reconnect();
-    ubidots.subscribeLastValue(DEVICE_LABEL, VARIABLE_LABEL); 
   }
   ubidots.loop();
 
@@ -169,6 +245,11 @@ void loop() {
     Serial.println("Houve uma mudança de posição do roteador.");
   } else {
     Serial.println("Não houve mudança de posição do roteador.");
+  }
+
+  // Verifica se o dispositivo está pegando o melhor sinal Wi-Fi
+  if (rssi < piorRede ) {
+    conectarMelhorWifi();
   }
 
   delay(5000);
@@ -207,6 +288,50 @@ void identificandoRoteador() {
   Serial.println(bssid);
 
 }
+
+void conectarMelhorWifi() {
+  int numRedes = WiFi.scanNetworks();
+  int indiceMelhorRede = -1; // Valor inicial inválido para o índice da melhor rede
+
+  // Percorrer todas as redes disponíveis
+  for (int i = 0; i < numRedes; i++) {
+    int potencia = WiFi.RSSI(i);
+      indiceMelhorRede = i;
+  }
+
+  // Verificar se foi encontrada uma rede com potência de sinal suficientemente boa
+   if (indiceMelhorRede >= 0) {
+      if (WiFi.SSID(indiceMelhorRede) == "Inteli-COLLEGE" && WIFI_PASS == "QazWsx@123") {
+        Serial.print("Conectando à melhor rede WiFi: ");
+        Serial.println(WiFi.SSID(indiceMelhorRede));
+        WiFi.begin(WiFi.SSID(indiceMelhorRede).c_str(), WIFI_PASS);
+        while (WiFi.status() != WL_CONNECTED) {
+          delay(1000);
+          Serial.println("Conectando ao Wi-Fi...");
+        }
+      } else {
+          Serial.println("Senha da rede WiFi não fornecida ou rede não encontrada!");
+          Serial.println(WiFi.SSID(indiceMelhorRede));
+          ESP.restart();
+      }
+    } else {
+        Serial.println("Nenhuma rede WiFi encontrada!");
+        ESP.restart();
+}
+
+}
+
+void callback(char *topic, byte *payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+}
+
+
 
 // void callback(char *topic, byte *payload, unsigned int length)
 // {
