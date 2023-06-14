@@ -6,9 +6,11 @@
 #include <RTClib.h>
 #include <UbidotsEsp32Mqtt.h>
 
-const char* WIFI_SSID = "SHARE-RESIDENTE"; // Fernanda
-const char* WIFI_PASS = "Share@residente23"; //  999818053
+// Configurações de autenticação do WiFi
+const char* WIFI_SSID = "SHARE-RESIDENTE"; 
+const char* WIFI_PASS = "Share@residente23"; 
 
+// Configurações de autenticação para o Ubidots
 const char *UBIDOTS_TOKEN = "BBFF-L2UWDy9jLghHCxu8o0xL10OjOrWxcM";
 const char *DEVICE_LABEL = "iotrackers-rastreador";   // Label do dispositivo para onde os dados serão publicados
 const char *VARIABLE_LABEL1 = "bssid"; // Label da variável para onde os dados serão publicados
@@ -16,27 +18,32 @@ const char *VARIABLE_LABEL2 = "intensidade-wifi"; // Label da variável para ond
 const char *VARIABLE_LABEL3 = "localizacao"; // Label da variável para onde os dados serão publicados
 const char *VARIABLE_LABEL4 = "localizacao-setor"; // Label da variável para onde os dados serão publicados
 
+// Criação inicial de variáveis 
 String bssid;
-
 const int PUBLISH_FREQUENCY = 1000; // Update rate in milliseconds
 unsigned long timer;
 Ubidots ubidots(UBIDOTS_TOKEN);
 
-struct WiFiAP {  //informações de um ponto de acesso 
+
+// Estrutura do WiFi
+struct WiFiAP { 
   String WIFI_SSID;
   int rssi;
   float x;
   float y;
 };
 
+
+// Estrutura das informações dos setores
 struct SetorInfo {
-  int setor; // mudar para string
+  int setor;
   double latitude;
   double longitude;
   String bssids[3];  // Alterado para um array de BSSIDs com tamanho máximo de 3
   int numBssids; // Número atual de bssids no array
 };
 
+// Estrutura da localização
 struct Localizacao {
   double latitude;
   double longitude;
@@ -66,6 +73,7 @@ SetorInfo verificarSetor(String bssid) {
   return vazio;
 }
 
+// Função para converter a identificação mac
 unsigned int macToInt(const uint8_t* mac) {
   unsigned int result = 0;
 
@@ -76,6 +84,7 @@ unsigned int macToInt(const uint8_t* mac) {
   return result;
 }
 
+// Função para estimar a posição do dispositivo
 void estimatePosition(WiFiAP* apList, int numAPs) {
   float sumX = 0;
   float sumY = 0;
@@ -94,6 +103,7 @@ void estimatePosition(WiFiAP* apList, int numAPs) {
   // Faça algo com a posição estimada
 }
 
+// Função com as configurações iniciais do projeto.
 void setup() {
   Serial.begin(115200);
   WiFi.mode(WIFI_STA);
@@ -122,13 +132,12 @@ void setup() {
 
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   
+  // Conectando ao Wifi
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Conectando ao Wi-Fi...");
   }
-  
   Serial.println("Conectado ao Wi-Fi!");
-
   ubidots.connectToWifi(WIFI_SSID, WIFI_PASS);
   ubidots.setCallback(callback);
   ubidots.setup();
@@ -136,8 +145,8 @@ void setup() {
 }
 
 
+// Função nativa do arduino para loop
 void loop() {
-
   // Obter informações do ponto de acesso conectado
   int rssi; // Intensidade do sinal
   int piorRede = -70; // Pior sinal pré-determinado.
@@ -171,10 +180,6 @@ void loop() {
   Serial.print("Intensidade do Sinal: ");
   Serial.print(rssi);
   Serial.println(" dBm");
-
-
-
-  // identificandoRoteador();
 
   if(millis() - timer > PUBLISH_FREQUENCY){
 
@@ -222,12 +227,15 @@ void loop() {
       Serial.println("BSSID não encontrado nos setores.");
     };
   }
+
+  // Loop para reconectar ao ubidots
   if (!ubidots.connected())
   {
     ubidots.reconnect();
   }
   ubidots.loop();
 
+  // Criando a última posição
   String ultimaPosicao;
   String penultimaPosicao;
   bool houveMudanca = false;
@@ -255,10 +263,11 @@ void loop() {
   delay(5000);
 }
 
+// Função para identificar o roteador
 void identificandoRoteador() {
   String bssid = WiFi.BSSIDstr();
 
-    // Procurar o valor correspondente no dicionário
+  // Procurar o valor correspondente no dicionário
   if (bssid == "FC:5C:45:00:4F:C8") {
     bssid = "Ateliê 11";
   } else if (bssid == "FC:5C:45:00:60:98") {
@@ -283,12 +292,12 @@ void identificandoRoteador() {
 
   // Atribuir o valor corrigido a bssid
   bssid = bssid;
-
   Serial.print("BSSID do roteador: ");
   Serial.println(bssid);
 
 }
 
+// Função para conectar ao Wifi
 void conectarMelhorWifi() {
   int numRedes = WiFi.scanNetworks();
   int indiceMelhorRede = -1; // Valor inicial inválido para o índice da melhor rede
@@ -321,6 +330,7 @@ void conectarMelhorWifi() {
 
 }
 
+// Callback para mensagens
 void callback(char *topic, byte *payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
@@ -330,28 +340,3 @@ void callback(char *topic, byte *payload, unsigned int length) {
   }
   Serial.println();
 }
-
-
-
-// void callback(char *topic, byte *payload, unsigned int length)
-// {
-//   Serial.print("Message arrived [");
-//   Serial.print(topic);
-//   Serial.print("] ");
-//   for (int i = 0; i < length; i++)
-//   {
-//     Serial.print((char)payload[i]);
-//     if ((char)payload[0] == '1')
-//     {
-//       digitalWrite(LED, HIGH);
-//     }
-//     else
-//     {
-//       digitalWrite(LED, LOW);
-//     }
-
-//   }
-//   Serial.println();
-
-//   identificandoRoteador();
-// }
