@@ -4,24 +4,9 @@
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 #include <Ultrasonic.h>
-#include <Keypad.h>
 
 
-//Keypad
 
-// const uint8_t ROWS = 4;
-// const uint8_t COLS = 4;
-
-// char keys[ROWS][COLS] = {
-//   {'1','2','3', 'A'},
-//   {'4','5','6', 'B'},
-//   {'7','8','9', 'C'},
-//   {'*','0','#', 'D'}
-// };  
-// uint8_t colPins[COLS] = {2, 4, 17, 27}; // Pinos conectados a C1, C2, C3, C4
-// uint8_t rowPins[ROWS] = {33, 35, 34, 26}; // Pinos conectados a R1, R2, R3, R4
-
-// Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -38,7 +23,7 @@ const int button_devolver= 33;
 bool switch_acesso= false;
 int value_button_retirar= 0;
 int value_button_devolver= 0;
-const int buzzerPin = 25;
+const int buzzerPin = 2;
 const int ledRele= 0;
 const int ledVerm = 32;
 const int ledVerd = 14;
@@ -233,16 +218,13 @@ void acessoAutorizacao (String content, bool autorizado) {
 void ledBuzzer(String cor) {
   // Condição para ver o comportamento do acendimento
   if (cor == "verde") {
-    led = ledVerd;
-    digitalWrite(led, HIGH);  
+    led = ledVerd;  
     buzzer(250);
     buzzer(250);
   } else {
-    led = ledVerm;
-    digitalWrite(led, HIGH);  
+    led = ledVerm;  
     buzzer(750);
   }
-  digitalWrite(led, LOW); 
 }
 
 
@@ -266,11 +248,9 @@ void lcdPrinter(String message1, String message2) {
 //Função para ativar o rele
 void ativaRele() {
   digitalWrite(rele, LOW);
-  digitalWrite(ledRele, HIGH);  
   Serial.println("Entrou rele");
   delay(3000);
-  digitalWrite(rele, HIGH);
-  digitalWrite(ledRele, LOW);  
+  digitalWrite(rele, HIGH);  
   Serial.println("Saiu rele");
 }
 
@@ -280,10 +260,8 @@ void verificaTabletNoArmario(){
   float distance = ultrasonic.read();
 
   if (distance > distanciaTablet) {
-    Serial.println("Tablet removido");
     tabletDisponivel = false;
   } else {
-    Serial.println("Tablet presente");
     tabletDisponivel = true;
   }
   delay(1000);
