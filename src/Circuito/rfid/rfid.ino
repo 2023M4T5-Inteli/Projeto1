@@ -6,9 +6,6 @@
 #include <Ultrasonic.h>
 
 
-
-
-
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 #define SS_PIN 5
 #define RST_PIN 15
@@ -27,9 +24,7 @@ const int buzzerPin = 2;
 const int ledRele= 0;
 const int ledVerm = 32;
 const int ledVerd = 14;
-//const int button = 4;
 const int pins[] = {buzzerPin, ledVerm, ledVerd};
-//const int pinsInput[] = {button};
 
 const int rele = 16;
 
@@ -38,7 +33,6 @@ const int echoPin = 13;
 const int distanciaTablet = 7;
 bool tabletDisponivel;
 
-//const int keys[] = {};
 bool autorizado = false;
 char* listaCartoesAutorizados[] = {"C3 CD 05 15"};
 int led;
@@ -83,6 +77,7 @@ void setup() {
   lcdPrinter("Aproxime o", "Cartao");
 }
 
+// Função com as configurações iniciais do LCD
 void inicioLcd() {
   lcd.init();
   lcd.backlight();
@@ -94,6 +89,7 @@ void inicioLcd() {
   lcd.clear();
 }
 
+// Função para printar no lcd
 void processInput(char key) {
   if ('-' == key && current == "") {
     current = "-";
@@ -102,17 +98,14 @@ void processInput(char key) {
   }
 }
 
-void Buttons(){
-  
-}
 
+// Função nativa de loop
 void loop() {
   lerCard();
   verificaTabletNoArmario();
-  Buttons();
-
 } 
 
+// Função para ler o cartão
 void lerCard() {
   // Verificando se é um cartão
   if (!mfrc522.PICC_IsNewCardPresent()) { return; }
@@ -134,19 +127,7 @@ void lerCard() {
   verificaAcesso(content);
 }
 
-// void novoUid(){
-//   byte newUid[] = NEW_UID;
-//   if (mfrc522.MIFARE_SetUid(newUid, sizeof(newUid), true)) {
-//     Serial.println(F("Novo UID gravado no cartão."));
-//   } else {
-//     Serial.println(F("Falha ao gravar novo UID no cartão."));
-//   }
-
-//   // Halt para evitar conflitos na leitura
-//   mfrc522.PICC_HaltA();
-//   mfrc522.PCD_StopCrypto1();
-// }
-
+// Função para verificar a autorização do acesso
 void verificaAcesso(String content){
   Serial.println();
   content.toUpperCase();
@@ -173,6 +154,7 @@ void verificaAcesso(String content){
   lcdPrinter("Aproxime o", "Cartao");
 }
 
+// Função para alterar com base no acesso
 void acessoAutorizacao (String content, bool autorizado) {
   Serial.print("Menssagem : ");
 
@@ -189,15 +171,14 @@ void acessoAutorizacao (String content, bool autorizado) {
 
   Serial.println(value_button_devolver);
 
+  // Condição para os tablets
     if(switch_acesso){
       lcdPrinter("Retirar:", "Devolver:");
       lcd.clear();
       if (value_button_retirar == HIGH){
         lcdPrinter("Retire o tablet no armário: ", "");
         delay(1000);
-        lcd.clear();
-
-      }
+        lcd.clear();}
       if (value_button_devolver == HIGH){
         lcdPrinter("Devolva o tablet no armário: ", "");
         delay(1000);
@@ -205,8 +186,6 @@ void acessoAutorizacao (String content, bool autorizado) {
 
       }
   }
-//    lcdPrinter(customkey);
-
   } else {
     Serial.println("Acesso Negado");
     lcdPrinter("Acesso Negado: ", content);
@@ -215,6 +194,7 @@ void acessoAutorizacao (String content, bool autorizado) {
   }
 }
 
+// Função para acender o led
 void ledBuzzer(String cor) {
   // Condição para ver o comportamento do acendimento
   if (cor == "verde") {
@@ -245,7 +225,7 @@ void lcdPrinter(String message1, String message2) {
   }
 }
 
-//Função para ativar o rele
+// Função para ativar o rele
 void ativaRele() {
   digitalWrite(rele, LOW);
   Serial.println("Entrou rele");
@@ -254,8 +234,8 @@ void ativaRele() {
   Serial.println("Saiu rele");
 }
 
+// Função para verificar a existência do tablet no armário
 void verificaTabletNoArmario(){
-
   Ultrasonic ultrasonic(triggerPin, echoPin);
   float distance = ultrasonic.read();
 
