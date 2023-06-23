@@ -7,8 +7,11 @@
 #include <UbidotsEsp32Mqtt.h>
 
 // Configurações de autenticação do WiFi
-const char* WIFI_SSID = "SHARE-RESIDENTE"; 
-const char* WIFI_PASS = "Share@residente23"; 
+const char* WIFI_SSID = "Inteli-COLLEGE"; 
+const char* WIFI_PASS = "QazWsx@123";
+const char* ApiUrlLocation = "https://industrial.api.ubidots.com/api/v1.6/devices/iotrackers-rastreador/localizacao/values?token=BBFF-L2UWDy9jLghHCxu8o0xL10OjOrWxcM";
+const char* ApiUrlBSSID = "https://industrial.api.ubidots.com/api/v1.6/devices/iotrackers-rastreador/bssid2/values?token=BBFF-L2UWDy9jLghHCxu8o0xL10OjOrWxcM";
+const char* ApiUrlSetor = "https://industrial.api.ubidots.com/api/v1.6/devices/iotrackers-rastreador/nomesetor/values?token=BBFF-L2UWDy9jLghHCxu8o0xL10OjOrWxcM";
 
 // Configurações de autenticação para o Ubidots
 const char *UBIDOTS_TOKEN = "BBFF-L2UWDy9jLghHCxu8o0xL10OjOrWxcM";
@@ -36,6 +39,7 @@ struct WiFiAP {
 
 // Estrutura das informações dos setores
 struct SetorInfo {
+  String nomeSetor;
   int setor;
   double latitude;
   double longitude;
@@ -51,9 +55,9 @@ struct Localizacao {
 
 // Array com os setores e suas informações
 SetorInfo setores[] = {
-  {1, 1.1, 1.1, {"FC:5C:45:00:56:18"}, 1},
-  {9, 2.2, 2.2, {"26:83:44:20:48:BF", "FC:5C:45:00:4F:C8"}, 2},
-  {11, 3.3, 3.3, {"D0:D3:E0:4D:3B:A0", "BSSID3_2", "BSSID3_3"}, 3}
+  {"Laboratório", 1, 1.1, 1.1, {"FC:5C:45:00:56:18"}, 1},
+  {"Ateliê 9", 9, -23.555942575875434, -46.73482089935096, {"26:83:44:20:48:BF", "FC:5C:45:00:4F:C8"}, 2},
+  {"Ateliê11", 11, 3.3, 3.3, {"D0:D3:E0:4D:3B:A0", "BSSID3_2", "BSSID3_3"}, 3}
 };
 
 // Número total de setores no array
@@ -69,7 +73,7 @@ SetorInfo verificarSetor(String bssid) {
     }
   }
   // Caso não encontre o BSSID, retorna uma estrutura vazia
-  SetorInfo vazio = {0, 0.0, 0.0, {}, 0};
+  SetorInfo vazio = {"", 0, 0.0, 0.0, {}, 0};
   return vazio;
 }
 
@@ -83,6 +87,7 @@ unsigned int macToInt(const uint8_t* mac) {
 
   return result;
 }
+
 
 // Função para estimar a posição do dispositivo
 void estimatePosition(WiFiAP* apList, int numAPs) {
@@ -207,8 +212,10 @@ void loop() {
       Serial.println("--------------------");
       Serial.print("BSSID: ");
       Serial.println(bssid);
+      Serial.print("Nome do setor: ");
+      Serial.println(setorInfo.nomeSetor);
       Serial.print("Setor: ");
-      Serial.println(setorInfo.setor);
+      Serial.println(setorInfo.nomeSetor);
       Serial.print("Latitude: ");
       Serial.println(setorInfo.latitude);
       Serial.print("Longitude: ");
@@ -222,6 +229,9 @@ void loop() {
       ubidots.add(VARIABLE_LABEL2, rssi);
       ubidots.add(VARIABLE_LABEL4, setorInfo.setor);
       ubidots.publish(DEVICE_LABEL);
+      sendLocation(setorInfo.latitude, setorInfo.longitude);
+      sendBSSID();
+      sendSetor(setorInfo.nomeSetor);
       timer = millis();
     } else {
       Serial.println("BSSID não encontrado nos setores.");
@@ -339,4 +349,83 @@ void callback(char *topic, byte *payload, unsigned int length) {
     Serial.print((char)payload[i]);
   }
   Serial.println();
+}
+
+void sendLocation(double latitude, double longitude) {
+  HTTPClient http;
+
+  StaticJsonDocument<200> doc;
+
+  doc["lat"] = latitude;
+  doc["lng"] = longitude;
+
+  String jsonStr;
+  serializeJson(doc, jsonStr);
+
+  Serial.println(jsonStr);
+
+  http.begin(ApiUrlLocation);
+
+  http.addHeader("Content-Type", "application/json");
+
+  int httpResponseCode = http.POST(jsonStr);
+
+  Serial.print("Response code");
+  Serial.println(httpResponseCode);
+  
+  http.end();
+}
+
+void sendBSSID() {
+  HTTPClient http;
+
+  StaticJsonDocument<200> doc2;
+
+  doc2["value"] = 1;
+  
+  JsonObject context = doc2.createNestedObject("context");
+  context["BSSID"] = WiFi.BSSIDstr();
+
+  String jsonStr2;
+  serializeJson(doc2, jsonStr2);
+
+  Serial.println(jsonStr2);
+
+  http.begin(ApiUrlBSSID);
+
+  http.addHeader("Content-Type", "application/json");
+
+  int httpResponseCode = http.POST(jsonStr2);
+
+  Serial.print("Response code");
+  Serial.println(httpResponseCode);
+  
+  http.end();
+}
+
+void sendSetor(String nomeSetor) {
+  HTTPClient http;
+
+  StaticJsonDocument<200> doc3;
+
+  doc3["value"] = 1;
+  
+  JsonObject context = doc3.createNestedObject("context");
+  context["nomeSetor"] = nomeSetor;
+
+  String jsonStr3;
+  serializeJson(doc3, jsonStr3);
+
+  Serial.println(jsonStr3);
+
+  http.begin(ApiUrlSetor);
+
+  http.addHeader("Content-Type", "application/json");
+
+  int httpResponseCode = http.POST(jsonStr3);
+
+  Serial.print("Response code");
+  Serial.println(httpResponseCode);
+  
+  http.end();
 }
