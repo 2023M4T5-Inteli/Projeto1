@@ -57,7 +57,7 @@ struct Localizacao {
 SetorInfo setores[] = {
   {"Laboratório", 1, 1.1, 1.1, {"FC:5C:45:00:56:18"}, 1},
   {"Ateliê 9", 9, -23.555942575875434, -46.73482089935096, {"26:83:44:20:48:BF", "FC:5C:45:00:4F:C8"}, 2},
-  {"Ateliê11", 11, 3.3, 3.3, {"D0:D3:E0:4D:3B:A0", "BSSID3_2", "BSSID3_3"}, 3}
+  {"Ateliê 11", 11, 3.3, 3.3, {"D0:D3:E0:4D:3B:A0", "BSSID3_2", "BSSID3_3"}, 3}
 };
 
 // Número total de setores no array
