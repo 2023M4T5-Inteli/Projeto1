@@ -58,6 +58,25 @@ int led;
 char key;
 String current = "";
 
+#include <RTClib.h>
+#include <UbidotsEsp32Mqtt.h>
+
+// Configurações de autenticação do WiFi
+const char* WIFI_SSID = "SHARE-RESIDENTE"; 
+const char* WIFI_PASS = "Share@residente23"; 
+
+// Configurações de autenticação para o Ubidots
+const char *UBIDOTS_TOKEN = "BBFF-L2UWDy9jLghHCxu8o0xL10OjOrWxcM";
+const char *DEVICE_LABEL = "iotrackers-box";   // Label do dispositivo para onde os dados serão publicados
+const char *VARIABLE_LABEL = "estado"; // Label da variável para onde os dados serão publicados
+
+
+// Criação inicial de variáveis 
+String bssid;
+const int PUBLISH_FREQUENCY = 1000; // Update rate in milliseconds
+unsigned long timer;
+Ubidots ubidots(UBIDOTS_TOKEN);
+
 
 void setup() {
   // Configurações iniciais
@@ -81,6 +100,7 @@ void setup() {
     pinMode(pins[i], OUTPUT);
     //pinMode(pinsInput[i], INPUT);
   }
+  wifiRFID();
   pinMode(button_retirar, INPUT);
   pinMode(button_devolver, INPUT);
 
@@ -112,6 +132,24 @@ void inicioLcd() {
   lcd.clear();
 }
 
+void wifiRFID(){
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  delay(1000);
+
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  
+  // Conectando ao Wifi
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Conectando ao Wi-Fi...");
+  }
+  Serial.println("Conectado ao Wi-Fi!");
+  ubidots.connectToWifi(WIFI_SSID, WIFI_PASS);
+  ubidots.setup();
+  ubidots.reconnect();
+}
+
 // Função para printar no lcd
 void processInput(char key) {
   if ('-' == key && current == "") {
@@ -120,7 +158,6 @@ void processInput(char key) {
     return;
   }
 }
-
 
 // Função nativa de loop
 void loop() {
@@ -157,22 +194,28 @@ void loop() {
   if(autorizado){
     verificaTabletNoArmario();
     if(tabletDisponivel){
+      ubidots.add(VARIABLE_LABEL, 0);
+      ubidots.publish(DEVICE_LABEL);
       lcd.clear();
       lcd.print("Pode retirar");
       delay(1000);
       ativaRele();
+    
     }
     else{
+      ubidots.add(VARIABLE_LABEL, 1);
+      ubidots.publish(DEVICE_LABEL);
       lcd.print("Pode Devolver");
       delay(1000);
       ativaRele();
+
     }
   }
   else{
     lcd.clear();
     lcd.print("Acesso Negado");
     delay(1000);
-    
+  
   }
 } 
 
