@@ -120,7 +120,6 @@ void loop() {
     autorizado=false;
   }
   acessoAutorizacao(content, autorizado);
-  // verificaTabletNoArmario();
   if(autorizado){
     verificaTabletNoArmario();
     if(tabletDisponivel){
