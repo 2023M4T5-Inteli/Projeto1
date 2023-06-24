@@ -351,6 +351,7 @@ void callback(char *topic, byte *payload, unsigned int length) {
   Serial.println();
 }
 
+// Mandando localização para o ubidots
 void sendLocation(double latitude, double longitude) {
   HTTPClient http;
 
@@ -376,6 +377,7 @@ void sendLocation(double latitude, double longitude) {
   http.end();
 }
 
+// Mandando o dispositivo para o ubidots
 void sendBSSID() {
   HTTPClient http;
 
@@ -403,6 +405,7 @@ void sendBSSID() {
   http.end();
 }
 
+// Mandando o setor para o ubidots
 void sendSetor(String nomeSetor) {
   HTTPClient http;
 
